@@ -72,18 +72,18 @@ To achieve a faster feedback loop, you may want to mount the secrets and configu
 # build the docker image
 docker build -t secure-webtty-dev .;
 
-# run the docker image
-docker run -p 8080:80 -p 8443:443 -p 8000:3000 \
--v "$(pwd)/config/nginx.conf:/etc/nginx/nginx.conf" \
--v "$(pwd)/config/supervisord.conf:/root/supervisord.conf" \
--v "$(pwd)/config/.profile:/root/.profile" \
--v "$(pwd)/secrets/auth/basic:/etc/nginx/auth/basic" \
--v "$(pwd)/secrets/certs/cert.pem:/etc/nginx/certs/cert.pem" \
--v "$(pwd)/secrets/certs/key.pem:/etc/nginx/certs/key.pem" \
--v "$(pwd)/secrets/auth/user.crt:/etc/nginx/auth/user.crt" \
--v "$(pwd)/secrets/auth/passwords:/etc/nginx/auth/passwords" \
+# run the docker image, the 'ro' binding is so that it doesn't remove our local copy
+docker run --name secure-webtty-dev -p 8080:80 -p 8443:443 -p 8000:3000 \
+  -v "$(pwd)/config/nginx.conf:/etc/nginx/nginx.conf:ro" \
+  -v "$(pwd)/config/supervisord.conf:/root/supervisord.conf:ro" \
+  -v "$(pwd)/config/.profile:/root/.profile:ro" \
+  -v "$(pwd)/secrets/auth/basic:/etc/nginx/auth/basic:ro" \
+  -v "$(pwd)/secrets/certs/cert.pem:/etc/nginx/certs/cert.pem:ro" \
+  -v "$(pwd)/secrets/certs/key.pem:/etc/nginx/certs/key.pem:ro" \
+  -v "$(pwd)/secrets/auth/user.crt:/etc/nginx/auth/user.crt:ro" \
+  -v "$(pwd)/secrets/auth/passwords:/etc/nginx/auth/passwords:ro" \
 secure-webtty-dev;
 
 # interactively enter the docker container
-docker exec -it $(docker ps | grep 'secure-webtty' | cut -f 1 -d ' ') /bin/bash;
+docker exec -it secure-webtty-dev /bin/bash;
 ```

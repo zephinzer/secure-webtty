@@ -72,10 +72,12 @@ printf -- "SERVER_CERT_PASSWORD:${SERVER_CERT_PASSWORD}" >> "${DOT_PASSWORDS_PAT
 
 printf -- "\033[1mCREDENTIALS GENERATION > ${DOT_PASSWORDS_PATH}\n\033[0m";
 
+printf -- "Creating the certificate passwords file at ${PASSWORDS_PATH}... ";
 printf -- "${SERVER_CERT_PASSWORD}\n${USER_CERT_PASSWORD}" > "${PASSWORDS_PATH}";
+printf -- '\033[1m\033[32mDONE.\033[0m\n';
 
 # create basic auth stuff
-printf -- 'Creating the password files... ';
+printf -- "Creating the password files at ${BASIC_AUTH_PATH}... ";
 stty -echo && htpasswd -b -c "${BASIC_AUTH_PATH}" "${USER_NAME}" "${USER_PASSWORD}" && stty echo;
 if [ "$?" = "0" ]; then 
   printf -- '\033[1m\033[32mDONE.\033[0m\n';
@@ -83,7 +85,7 @@ else
   handle_quit;
 fi;
 
-printf -- 'Verifying BASIC AUTH credentials... ';
+printf -- "Verifying BASIC AUTH credentials at ${BASIC_AUTH_PATH}... ";
 htpasswd -b -v "${BASIC_AUTH_PATH}" "${USER_NAME}" "${USER_PASSWORD}";
 if [ "$?" = "0" ]; then 
   printf -- '\033[1m\033[32mDONE.\033[0m\n';
@@ -91,7 +93,7 @@ else
   handle_quit;
 fi;
 
-printf -- 'Creating the server KEY & CERTIFICATE... ';
+printf -- 'Creating the server KEY & CERTIFICATE at ./secrets/certs/key.pem and ./secrets/certs/cert.pem... ';
 # generate server certificate
 openssl req \
   -x509 \
@@ -103,7 +105,7 @@ openssl req \
   -subj "/CN=${USER_CERT_DOMAIN}/O=${USER_CERT_ID}/C=US";
 printf -- '\033[32m\033[1mDONE\033[0m\n';
 
-printf -- 'Creating the CERTIFICATE AUTHORITY key... ';
+printf -- 'Creating the CERTIFICATE AUTHORITY key at ./secrets/ca.key... ';
 # create the certifcate authority (ca)
 openssl genrsa \
   -des3 \
@@ -112,7 +114,7 @@ openssl genrsa \
   4096;
 printf -- '\033[32m\033[1mDONE\033[0m\n';
 
-printf -- 'Creating the CERTIFICATE AUTHORITY certifcate... ';
+printf -- 'Creating the CERTIFICATE AUTHORITY certifcate at ./secrets/ca.crt... ';
 # create the certificate of the ca
 openssl req \
   -new \
@@ -124,7 +126,7 @@ openssl req \
   -subj "/CN=${USER_CERT_DOMAIN}/O=${USER_CERT_ID}/C=US";
 printf -- '\033[32m\033[1mDONE\033[0m\n';
 
-printf -- 'Creating the USER private key... ';
+printf -- 'Creating the USER private key at ./secrets/user.key... ';
 # create the user
 openssl genrsa \
   -des3 \
@@ -133,7 +135,7 @@ openssl genrsa \
   4096;
 printf -- '\033[32m\033[1mDONE\033[0m\n';
 
-printf -- 'Creating the USER certificate signing request (CSR)... ';
+printf -- 'Creating the USER certificate signing request (CSR) at ./secrets/user.csr... ';
 # create the user certificate signing request (csr)
 openssl req \
   -new \
@@ -143,7 +145,7 @@ openssl req \
   -subj "/CN=${USER_CERT_DOMAIN}/O=${USER_CERT_ID}/C=US";
 printf -- '\033[32m\033[1mDONE\033[0m\n';
 
-printf -- 'Signing USER certificate signing request (CSR)... ';
+printf -- 'Signing USER certificate signing request (CSR) at ./secrets/auth/user.crt... ';
 # sign the user csr with the ca's certificate
 openssl x509 \
   -req \
@@ -156,7 +158,7 @@ openssl x509 \
   -out ./secrets/auth/user.crt;
 printf -- '\033[32m\033[1mDONE\033[0m\n';
 
-printf -- 'Exporting user certificate into pfx... ';
+printf -- 'Exporting user certificate into pfx at ./secrets/browser/user.pfx... ';
 # export the user's certificate into pfx format
 openssl pkcs12 \
   -export \
@@ -167,3 +169,5 @@ openssl pkcs12 \
   -passout pass:${USER_CERT_PASSWORD} \
   -certfile ./secrets/ca.crt;
 printf -- '\033[32m\033[1mDONE\033[0m\n';
+
+printf -- '\n\033[32m\033[1mALL SECRETS SUCCESSFULLY CREATED\033[0m\n';

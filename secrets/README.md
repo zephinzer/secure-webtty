@@ -1,6 +1,15 @@
 # Secrets Directory
 This directory should contain authentication details and certificates for the server.
 
+## Automatic Generation
+To automatically generate the required files, run the following from the project root:
+
+```sh
+./provisioning/create-secrets.sh --auto
+```
+
+For manual generation, read on below...
+
 ## Basic Authentication
 Run the following from the project root to generate the appropriate files:
 
