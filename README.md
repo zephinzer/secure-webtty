@@ -36,8 +36,8 @@ docker run --name secure-webtty -p 8443:443 -p 8080:80 -p 8000:3000 -v "/path/to
 You can now access the services via:
 
 - https://localhost:8443 (ssl + basic-auth protected)
-- https://localhost:8080 (basic-auth protected)
-- https://localhost:8000 (unprotected endpoint)
+- http://localhost:8080 (basic-auth protected)
+- http://localhost:8000 (unprotected endpoint)
 
 To access the SSL protected variant, you will need to add the generated `./secrets/browser/user.pfx` to your browser.
 
