@@ -1,0 +1,131 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/static/xterm/dist/xterm.css" />
+    <link rel="stylesheet" href="/static/xterm/dist/addons/fullscreen/fullscreen.css" />
+    <script src="/static/xterm/dist/xterm.js"></script>
+    <script src="/static/xterm/dist/addons/attach/attach.js"></script>
+    <script src="/static/xterm/dist/addons/fit/fit.js"></script>
+    <script src="/static/xterm/dist/addons/fullscreen/fullscreen.js"></script>
+    <script src="/static/xterm/dist/addons/search/search.js"></script>
+    <script src="/static/xterm/dist/addons/webLinks/webLinks.js"></script>
+    <script src="/static/xterm/dist/addons/winptyCompat/winptyCompat.js"></script>
+    <style>
+      html ::-webkit-scrollbar {
+        display: none;
+      }
+      #terminal-container {
+        position: fixed;
+        z-index: 1000;
+      }
+      .terminal.xterm {
+        height: 100%;
+        width: 100%;
+      }
+      .xterm ::-webkit-scrollbar {
+        background-color: black;
+        width: 16px;
+      }
+      .xterm ::-webkit-scrollbar-corner {
+        background-color: green;
+      }
+      .xterm ::-webkit-scrollbar-track {
+        background-color: black;
+      }
+      .xterm ::-webkit-scrollbar-track-piece {
+        background-color: black;
+      }
+      .xterm ::-webkit-scrollbar-thumb {
+        background-color: greenyellow;
+        border-radius: 8px;
+        border-width: 4px;
+        border-color: red;
+      }
+    </style>
+  </head>
+  <body style="margin: 0px">
+    <div id="terminal-container"></div>
+    <script>
+      Terminal.applyAddon(attach);
+      Terminal.applyAddon(fit);
+      Terminal.applyAddon(fullscreen);
+      Terminal.applyAddon(search);
+      Terminal.applyAddon(webLinks);
+      Terminal.applyAddon(winptyCompat);
+
+      var term;
+      var protocol;
+      var socketURL;
+      var socket;
+      var pid;
+
+      var terminalContainer = document.getElementById('terminal-container');
+
+      function setTerminalSize() {
+        var width = '100%';
+        var height = '100%';
+        terminalContainer.style.width = width;
+        terminalContainer.style.height = height;
+        term.fit();
+      };
+
+      function setPadding() {
+        term.element.style.padding = '0px';
+        term.fit();
+      };
+
+      createTerminal();
+
+      function createTerminal() {
+        // Clean terminal
+        while (terminalContainer.children.length) {
+          terminalContainer.removeChild(terminalContainer.children[0]);
+        }
+        term = new Terminal({
+          bellStyle: 'both',
+          macOptionIsMeta: true,
+          cursorBlink: true,
+          cursorStyle: 'underline',
+          scrollback: 8000,
+          tabStopWidth: 2,
+        });
+        window.term = term;  // Expose `term` to window for debugging purposes
+        window.onresize = function(size) {
+          term.fit();
+          term.focus();
+        };
+        term.on('resize', function (size) {
+          if (!pid) {return;}
+          var cols = size.cols;
+          var rows = size.rows;
+          var url = '/terminals/' + pid + '/size?cols=' + cols + '&rows=' + rows;
+          fetch(url, { method: 'POST' });
+        });
+        protocol = (location.protocol === 'https:') ? 'wss://' : 'ws://';
+        socketURL = protocol + location.hostname + ((location.port) ? (':' + location.port) : '') + '/terminals/';
+
+        term.open(terminalContainer);
+        term.winptyCompatInit();
+        term.webLinksInit();
+        term.fit();
+        term.focus();
+
+        setTimeout(function () {
+          setTerminalSize();
+          fetch('/terminals?cols=' + term.cols + '&rows=' + term.rows, { method: 'POST' }).then(function (res) {
+            res.text().then(function (processId) {
+              pid = processId;
+              socketURL += processId;
+              socket = new WebSocket(socketURL);
+              socket.onopen = runRealTerminal;
+            });
+          });
+        }, 0);
+      }
+
+      function runRealTerminal() {
+        term.attach(socket);
+        term._initialized = true;
+      }
+    </script>
+  </body>
+</html>
